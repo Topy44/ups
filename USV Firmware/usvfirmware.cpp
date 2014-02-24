@@ -34,7 +34,15 @@ volatile millis_t adcTimer = 0;
 
 int main(void)
 {
-	char buf[20];
+	millis_init();
+	serial_init();
+
+	printf("12V USV v0.2.0\r\n");
+
+	#ifdef DEBUG
+	printf("Debug build!\r\n");
+	#endif
+
 	in(OPTO);
 	in(MECHSW);
 	in(BAT1STAT);
@@ -62,9 +70,6 @@ int main(void)
 	ADMUX |= (1<<REFS0) | (1<<REFS1);
 	ADCSRA |= (1<<ADEN) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2);	// Enable ADC, Prescaler F_CPU/128
 	
-	millis_init();
-	serial_init();
-
 	sei();	// Enable interrupts. Use atomic blocks from here on
 
 	switchStatus = !get(MECHSW);
@@ -98,6 +103,8 @@ int main(void)
 	_delay_ms(500);
 	
 	adcTimer = millis();
+
+	printf("Init complete, entering main loop...\r\n");
 
 	// Main loop
     while(1)
