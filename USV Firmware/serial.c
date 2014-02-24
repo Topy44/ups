@@ -1,3 +1,7 @@
+/*
+Serial library by Lukas Schauer, unknown license
+*/
+
 #include "bitset.h"
 #include "serial.h"
 #include <avr/interrupt.h>
