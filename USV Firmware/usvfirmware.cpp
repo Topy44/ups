@@ -169,7 +169,7 @@ int main(void)
 		if (!get(MECHSW) || chargeStatus) fanOverride = true;	// Force fan on if mech. switch is on or batteries are charging
 		else fanOverride = false;
 		
-		if (fanOverride && !fanRunning) fanon();
+		if (fanOverride && !fanRunning) fanrun(100);
 		
 		fancheck();
 		
@@ -225,19 +225,6 @@ void fanrun(unsigned long ms)
 	}
 }
 
-void fanon()
-{
-	// Turn fan on
-	if (!fanRunning)
-	{
-		on(FANCTRL);
-		fanRunning = true;
-	}
-	#ifdef DEBUG
-		printf("Turning on fan (override).\r\n");
-	#endif
-}
-
 void fancheck()
 {
 	// Check if its time to turn the fan off
@@ -250,8 +237,11 @@ void fancheck()
 			#ifdef DEBUG
 				printf("Turning fan off. Delay was %lu ms.\r\n", fanRunningTime);
 			#endif
-			
-			if (!powerStatus) while(1);	//  Loop forever if system is shutting down
+			fanRunningTime = 0;
+
+			#ifdef DEBUG
+				if (!powerStatus) printf("System shutting down...\r\n");
+			#endif
 		}
 	}
 }

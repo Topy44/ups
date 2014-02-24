@@ -32,7 +32,6 @@
 void pwrled(int col);
 void statled(int col);
 void fanrun(unsigned long ms);
-void fanon();
 void fancheck();
 //unsigned long adcread(uint8_t ch);
 
