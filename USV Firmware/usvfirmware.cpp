@@ -35,13 +35,16 @@ volatile bool fanOverride = false;
 volatile bool chargeStatus = false;
 
 volatile millis_t adcTimer = 0;
+volatile millis_t statusTimer = 0;
 
 int main(void)
 {
+	_delay_ms(200);	// Wait a bit to escape reset loops
+
 	millis_init();
 	serial_init();
 
-	printf("12V USV v0.2.0\r\n(c)2014 Thorin Hopkins");
+	printf("12V USV v0.2.0\r\n(c)2014 Thorin Hopkins\r\n");
 
 	#ifdef DEBUG
 		printf("Debug build!\r\n");
@@ -78,8 +81,6 @@ int main(void)
 
 	switchStatus = !get(MECHSW);
 
-	_delay_ms(200);	// Wait a bit to escape reset loops
-
 	// Figure out initial state
 	if (get(OPTO))
 	{
@@ -113,6 +114,7 @@ int main(void)
 	_delay_ms(500);
 	
 	adcTimer = millis();
+	statusTimer = millis();
 
 	printf("Init complete, entering main loop...\r\n");
 
@@ -122,9 +124,6 @@ int main(void)
 		if (switchStatus != get(MECHSW))
 		{
 			switchStatus = get(MECHSW);
-			#ifdef DEBUG
-				printf("Mech.Sw. Status: %u %u\r\n", switchStatus, get(MECHSW));
-			#endif
 			if (!switchStatus)
 			{
 				// Mech. Switch turned on
@@ -141,7 +140,7 @@ int main(void)
 				pwrled(LOFF);
 				fanrun(FANMECHSWOFF);
 				#ifdef DEBUG
-					printf("Mech.Sw. turned on.\r\n");
+					printf("Mech.Sw. turned off.\r\n");
 				#endif
 			}
 		}
@@ -173,6 +172,14 @@ int main(void)
 		if (fanOverride && !fanRunning) fanon();
 		
 		fancheck();
+		
+		#ifdef DEBUG
+			if (millis() - statusTimer >= STATUSFREQ)
+			{
+				statusTimer = millis();
+				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u), ExtPower: %u\r\n", millis(), get(MECHSW), fanRunning, chargeStatus, get(BAT1STAT), get(BAT2STAT), powerStatus);
+			}
+		#endif
 		
     }	// End of main loop
 }
@@ -234,13 +241,18 @@ void fanon()
 void fancheck()
 {
 	// Check if its time to turn the fan off
-	if (!fanOverride && fanRunning && (millis() - fanTurnOnTime >= fanRunningTime))
+	if (fanRunning && (millis() - fanTurnOnTime >= fanRunningTime))
 	{
-		off(FANCTRL);
-		fanRunning = false;
-		#ifdef DEBUG
-			printf("Turning fan off. Delay was %lu ms.\r\n", fanRunningTime);
-		#endif
+		if (!fanOverride)
+		{
+			off(FANCTRL);
+			fanRunning = false;
+			#ifdef DEBUG
+				printf("Turning fan off. Delay was %lu ms.\r\n", fanRunningTime);
+			#endif
+			
+			if (!powerStatus) while(1);	//  Loop forever if system is shutting down
+		}
 	}
 }
 

@@ -9,10 +9,10 @@
 #define USVFIRMWARE_H_
 
 // -- Constants
-
+#define STATUSFREQ 5000
 // Switching delays
 #define ONDELAY 2000
-#define SWITCHDELAY 10
+#define SWITCHDELAY 5
 
 // Fan delays
 #ifdef DEBUG
