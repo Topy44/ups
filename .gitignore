@@ -20,6 +20,10 @@
 *.out
 *.app
 
+# Packages
+*.zip
+*.7z
+
 # Other
 backup
 Debug
