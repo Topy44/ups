@@ -16,11 +16,11 @@
 
 // Fan delays
 #ifdef DEBUG
-	#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
-	#define FANMECHSWOFF 3*60000	// Run fan for 3 minutes when mech. switch turned off
-#else
 	#define FANEXTPOWERON 5000
 	#define FANMECHSWOFF 1500
+#else
+	#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
+	#define FANMECHSWOFF 3*60000	// Run fan for 3 minutes when mech. switch turned off
 #endif
 
 // -- Aliases

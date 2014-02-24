@@ -3,9 +3,9 @@
 
 #include <stdio.h>
 
-#define BAUD 9600UL
+#define BAUD 115200UL
 
-#define RECBUF_SIZE 256
+#define RECBUF_SIZE 8
 
 // No idea why this is needed
 #ifdef __cplusplus
