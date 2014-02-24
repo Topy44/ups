@@ -8,20 +8,27 @@
 #ifndef USVFIRMWARE_H_
 #define USVFIRMWARE_H_
 
-// Constants
+// -- Constants
+
+// Switching delays
 #define ONDELAY 2000
 #define SWITCHDELAY 10
 
-#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
+// Fan delays
+#ifdef DEBUG
+	#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
+	#define FANMECHSWOFF 3*60000	// Run fan for 3 minutes when mech. switch turned off
+#else
+	#define FANEXTPOWERON 5000
+	#define FANMECHSWOFF 1500
+#endif
 
-#define CTC_MATCH_OVERFLOW ((F_CPU / 1000) / 8)
-
-// Aliases
+// -- Aliases
 #define LOFF 0
 #define LRED 1
 #define LGREEN 2
 
-// Prototypes
+// -- Prototypes
 void pwrled(int col);
 void statled(int col);
 void fanrun(unsigned long ms);

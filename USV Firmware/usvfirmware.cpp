@@ -44,7 +44,7 @@ int main(void)
 	printf("12V USV v0.2.0\r\n");
 
 	#ifdef DEBUG
-	printf("Debug build!\r\n");
+		printf("Debug build!\r\n");
 	#endif
 
 	in(OPTO);
@@ -86,6 +86,9 @@ int main(void)
 		// External Power turned on
 		powerStatusChanged = true;
 		powerStatusTime = millis();
+		#ifdef DEBUG
+			printf("External power turned on.");
+		#endif
 	}
 	else
 	{
@@ -102,6 +105,9 @@ int main(void)
 		_delay_ms(SWITCHDELAY);
 		off(SOURCESEL2);
 		}
+		#ifdef DEBUG
+			printf("External power turned off.");
+		#endif
 	}
 	
 	_delay_ms(500);
@@ -127,6 +133,7 @@ int main(void)
 				// Mech. Switch turned off
 				off(OUTCTRL);	// Turn off output
 				pwrled(LOFF);
+				fanrun(FANMECHSWOFF);
 			}
 		}
 	
@@ -187,6 +194,10 @@ void fanrun(unsigned long ms)
 	fanRunning = true;
 	fanTurnOnTime = millis();
 	
+	#ifdef DEBUG
+		printf("Running fan for %u ms.", ms);
+	#endif
+	
 	if (fanRunningTime < ms)
 	{
 		fanRunningTime = ms;
@@ -210,6 +221,9 @@ void fancheck()
 	{
 		off(FANCTRL);
 		fanRunning = false;
+		#ifdef DEBUG
+			printf("Turning fan off. Delay was %u ms.", fanRunningTime);
+		#endif
 	}
 }
 
