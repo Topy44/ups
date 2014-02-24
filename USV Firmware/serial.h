@@ -7,8 +7,7 @@
 
 #define RECBUF_SIZE 256
 
-//THIS DOESNT EVEN MAKE ANY SENSE
-
+// No idea why this is needed
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,7 +16,7 @@ extern volatile int recBuffer[RECBUF_SIZE];
 extern volatile uint16_t recReadIndex;
 extern volatile uint16_t recWriteIndex;
 
-static FILE uart_stdio;
+//static FILE uart_stdio;
 
 void serial_init(void);
 int s_putchr(char c, FILE *stream);

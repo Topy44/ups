@@ -10,9 +10,9 @@
 
 // Constants
 #define ONDELAY 2000
-//#define FANDELAY 5*60000	// 5 Minutes
-#define FANDELAY 5000
-#define SWITCHDELAY 5
+#define SWITCHDELAY 10
+
+#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
 
 #define CTC_MATCH_OVERFLOW ((F_CPU / 1000) / 8)
 
@@ -24,6 +24,9 @@
 // Prototypes
 void pwrled(int col);
 void statled(int col);
-long adcread(uint8_t ch);
+void fanrun(unsigned long ms);
+void fanon();
+void fancheck();
+//unsigned long adcread(uint8_t ch);
 
 #endif /* USVFIRMWARE_H_ */

@@ -14,21 +14,25 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <util/atomic.h>
+#include <stdbool.h>
 
 #include "serial.h"
 #include "iomacros.h"
 #include "millis.h"		// Uses TIMER2
 
-volatile bool powerStatusChanged = FALSE;
+volatile bool powerStatusChanged = false;
 volatile millis_t powerStatusTime = 0;
-volatile bool powerStatus = FALSE;
+volatile bool powerStatus = false;
 
-volatile bool switchStatus = FALSE;
+volatile bool switchStatus = false;
 volatile millis_t switchStatusTime = 0;
 
-volatile bool fanStatus = FALSE;
-volatile millis_t fanStatusTime = 0;
-volatile bool fanDelayRunning = FALSE;
+volatile millis_t fanTurnOnTime = 0;
+volatile millis_t fanRunningTime = 0;
+volatile bool fanRunning = false;
+volatile bool fanOverride = false;
+
+volatile bool chargeStatus = false;
 
 volatile millis_t adcTimer = 0;
 
@@ -80,15 +84,15 @@ int main(void)
 	if (get(OPTO))
 	{
 		// External Power turned on
-		powerStatusChanged = TRUE;
+		powerStatusChanged = true;
 		powerStatusTime = millis();
 	}
 	else
 	{
 		// External Power turned off
-		powerStatusChanged = FALSE;
+		powerStatusChanged = false;
 		powerStatusTime = 0;
-		powerStatus = FALSE;
+		powerStatus = false;
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 		{
 		statled(LRED);
@@ -114,64 +118,42 @@ int main(void)
 			switchStatus = get(MECHSW);
 			if (!switchStatus)
 			{
-				// Power Switch turned on
-				pwrled(LGREEN);
+				// Mech. Switch turned on
 				on(OUTCTRL);	// Turn on output
+				pwrled(LGREEN);
 			}
 			else
 			{
-				// Power Switch turned off
-				pwrled(LOFF);
+				// Mech. Switch turned off
 				off(OUTCTRL);	// Turn off output
+				pwrled(LOFF);
 			}
 		}
 	
 		if (powerStatusChanged && ((millis() - powerStatusTime) >= ONDELAY) && get(OPTO))
 		{
+			// Power was turned on ONDELAY ago, react to it
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 			{
-				powerStatusChanged = FALSE;
-				powerStatus = TRUE;
-				statled(LGREEN);
 				on(SOURCESEL1);
 				_delay_ms(SWITCHDELAY);
 				on(SOURCESEL2);
 				_delay_ms(SWITCHDELAY);
 				on(CHARGESEL);
+
+				powerStatusChanged = false;
+				powerStatus = true;
+				statled(LGREEN);
+				fanrun(FANEXTPOWERON);
 			}
 		}
 		
-		if (!get(MECHSW) || !get(BAT1STAT) || !get(BAT2STAT))
-		{
-			on(FANCTRL);	// Turn fan on
-			fanStatus = TRUE;
-			fanDelayRunning = FALSE;
-		}
-		else if (fanStatus && !fanDelayRunning)
-		{
-			fanStatusTime = millis();
-			fanDelayRunning = TRUE;
-		}
-		
-		if (fanDelayRunning && (millis() - fanStatusTime >= FANDELAY))
-		{
-			fanStatus = FALSE;
-			fanDelayRunning = FALSE;
-			off(FANCTRL);	// Turn fan off
-		}
-		
-		if (get(MECHSW))
-		{
-			if (!get(BAT1STAT) || !get(BAT2STAT))
-			{
-				pwrled(LRED);
-			}
-			else
-			{
-				pwrled(LOFF);
-			}
-		}
-    }
+		if (powerStatus && (!get(BAT1STAT) || !get(BAT2STAT))) chargeStatus = true;	// Ignore charge status inputs if ext. power is off
+		else chargeStatus = false;
+
+		if (!get(MECHSW) || chargeStatus) fanOverride = true;	// Force fan on if mech. switch is on or batteries are charging
+		else fanOverride = false;
+    }	// End of main loop
 }
 
 ISR(INT0_vect)
@@ -179,15 +161,15 @@ ISR(INT0_vect)
 	if (get(OPTO))
 	{
 		// External Power turned on
-		powerStatusChanged = TRUE;
+		powerStatusChanged = true;
 		powerStatusTime = millis();
 	}
 	else
 	{
 		// External Power turned off
-		powerStatusChanged = FALSE;
+		powerStatusChanged = false;
 		powerStatusTime = 0;
-		powerStatus = FALSE;
+		powerStatus = false;
 		statled(LRED);
 		off(CHARGESEL);
 		_delay_ms(SWITCHDELAY);
@@ -195,6 +177,39 @@ ISR(INT0_vect)
 		_delay_ms(SWITCHDELAY);
 		off(SOURCESEL2);
 		_delay_ms(ONDELAY);
+	}
+}
+
+void fanrun(unsigned long ms)
+{
+	// Turn fan on for a period of time
+	on(FANCTRL);
+	fanRunning = true;
+	fanTurnOnTime = millis();
+	
+	if (fanRunningTime < ms)
+	{
+		fanRunningTime = ms;
+	}
+}
+
+void fanon()
+{
+	// Turn fan on
+	if (!fanRunning)
+	{
+		on(FANCTRL);
+		fanRunning = true;
+	}
+}
+
+void fancheck()
+{
+	// Check if its time to turn the fan off
+	if (!fanOverride && fanRunning && (millis() - fanTurnOnTime >= fanRunningTime))
+	{
+		off(FANCTRL);
+		fanRunning = false;
 	}
 }
 
