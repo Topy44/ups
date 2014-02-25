@@ -191,10 +191,10 @@ int main(void)
 				statusTimer = millis();
 				double bat1voltage;
 				double bat2voltage;
-				bat1voltage = ((double)adcread(BAT1V)/1024*3)*((25.5+4.9)/4.9);
-				bat2voltage = ((double)adcread(BAT2V)/1024*3)*((25.5+12.4)/12.4);
+				bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
+				bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
 				if (!chargeStatus) bat1voltage -= bat2voltage;
-				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), get(MECHSW), fanStatus, chargeStatus, get(BAT1STAT), get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
+				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 				printf("Battery 1 Voltage: %fV (Raw %lu) - Battery 2 Voltage: %fV (Raw: %lu)\r\n", bat1voltage, adcread(BAT1V), bat2voltage, adcread(BAT2V));
 			}
 		#endif
@@ -202,8 +202,6 @@ int main(void)
 		bool batLowVoltage = false;
 		bool batVeryLowVoltage = false;
 		
-		// TODO: Check battery voltage
-
 		// Ext. Power on
 		if (powerStatus && !switchStatus)
 		{
