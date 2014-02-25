@@ -20,22 +20,37 @@
 #include "iomacros.h"
 #include "millis.h"		// Uses TIMER2
 
+enum ledstatus
+{
+	OFF,
+	RED,
+	GREEN,
+	FLASHRED,
+	FLASHGREEN,
+	FASTRED,
+	FASTGREEN
+};
+
+volatile ledstatus ledStatusA = OFF;
+volatile ledstatus ledStatusB = OFF;
+
 volatile bool powerStatusChanged = false;
 volatile millis_t powerStatusTime = 0;
 volatile bool powerStatus = false;
 
-volatile uint8_t switchStatus = false;	// Needs to be uint8_t because it gets compared to get() result
+volatile uint8_t switchStatus = false;	// Needs to be uint8_t because it gets compared to a get() result
 volatile millis_t switchStatusTime = 0;
 
 volatile millis_t fanTurnOnTime = 0;
-volatile millis_t fanRunningTime = 0;
-volatile bool fanRunning = false;
+volatile millis_t fanStatusTime = 0;
+volatile bool fanStatus = false;
 volatile bool fanOverride = false;
 
 volatile bool chargeStatus = false;
 
 volatile millis_t adcTimer = 0;
 volatile millis_t statusTimer = 0;
+volatile millis_t ledTimer = 0;
 
 int main(void)
 {
@@ -99,12 +114,11 @@ int main(void)
 		powerStatus = false;
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 		{
-		statled(LRED);
-		off(CHARGESEL);
-		_delay_ms(SWITCHDELAY);
-		off(SOURCESEL1);
-		_delay_ms(SWITCHDELAY);
-		off(SOURCESEL2);
+			off(CHARGESEL);
+			_delay_ms(SWITCHDELAY);
+			off(SOURCESEL1);
+			_delay_ms(SWITCHDELAY);
+			off(SOURCESEL2);
 		}
 		#ifdef DEBUG
 			printf("External power turned off.\r\n");
@@ -115,6 +129,7 @@ int main(void)
 	
 	adcTimer = millis();
 	statusTimer = millis();
+	ledTimer = millis();
 
 	printf("Init complete, entering main loop...\r\n");
 
@@ -128,7 +143,6 @@ int main(void)
 			{
 				// Mech. Switch turned on
 				on(OUTCTRL);	// Turn on output
-				pwrled(LGREEN);
 				#ifdef DEBUG
 					printf("Mech.Sw. turned on.\r\n");
 				#endif
@@ -137,7 +151,6 @@ int main(void)
 			{
 				// Mech. Switch turned off
 				off(OUTCTRL);	// Turn off output
-				pwrled(LOFF);
 				fanrun(FANMECHSWOFF);
 				#ifdef DEBUG
 					printf("Mech.Sw. turned off.\r\n");
@@ -158,7 +171,6 @@ int main(void)
 
 				powerStatusChanged = false;
 				powerStatus = true;
-				statled(LGREEN);
 				fanrun(FANEXTPOWERON);
 			}
 		}
@@ -169,7 +181,7 @@ int main(void)
 		if (!get(MECHSW) || chargeStatus) fanOverride = true;	// Force fan on if mech. switch is on or batteries are charging
 		else fanOverride = false;
 		
-		if (fanOverride && !fanRunning) fanrun(100);
+		if (fanOverride && !fanStatus) fanrun(100);
 		
 		fancheck();
 		
@@ -177,9 +189,86 @@ int main(void)
 			if (millis() - statusTimer >= STATUSFREQ)
 			{
 				statusTimer = millis();
-				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u), ExtPower: %u\r\n", millis(), get(MECHSW), fanRunning, chargeStatus, get(BAT1STAT), get(BAT2STAT), powerStatus);
+				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), get(MECHSW), fanStatus, chargeStatus, get(BAT1STAT), get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 			}
 		#endif
+
+		bool batLowVoltage = false;
+		bool batVeryLowVoltage = false;
+		
+		// TODO: Check battery voltage
+
+		// Ext. Power on
+		if (powerStatus && !switchStatus)
+		{
+			// LEDs: Green/Green			On, ext. power
+			ledStatusA = GREEN;
+			ledStatusB = GREEN;
+		}
+		else if (powerStatus && !chargeStatus)
+		{
+			// LEDs: Flash Red/Off			Off, charging
+			ledStatusA = FLASHRED;
+			ledStatusB = OFF;
+		}
+		else if (powerStatus && fanStatus)
+		{
+			// LEDs: Off/Flash Green			Off, ext. power, fan running
+			ledStatusA = OFF;
+			ledStatusB = FLASHGREEN;
+			//printf("Lüfternachlauf Netzbetrieb");
+		}
+	
+		// Ext. power off
+		else if (!switchStatus && batLowVoltage)
+		{
+			// LEDs: Flash Red/Off			On, bat. power, bat. low
+			ledStatusA = FLASHRED;
+			ledStatusB = OFF;
+		}
+		else if (!switchStatus && batVeryLowVoltage)
+		{
+			// LEDs: Flash Red (fast)/Off		On, bat. power, bat. low, sound alarm
+			ledStatusA = FASTRED;
+			ledStatusB = OFF;
+		}
+		else if (!switchStatus)
+		{
+			// LEDs: Red/Off				On, bat. power
+			ledStatusA = RED;
+			ledStatusB = OFF;
+			//printf("Batteriebetrieb");
+		}
+		else if (fanStatus)
+		{
+			// LEDs: Off/Flash Red			Off, bat.power, fan running
+			ledStatusA = FLASHRED;
+			ledStatusB = OFF;
+			//printf("Lüfternachlauf Batteriebetrieb\r\n");
+		}
+		else
+		{
+			// LEDs: Off/Off				Undefined state
+			ledStatusA = OFF;
+			ledStatusB = OFF;
+		}
+
+		static ledstatus ledStatusAOld = OFF;
+		static ledstatus ledStatusBOld = OFF;
+		
+		if (ledStatusA != ledStatusAOld || ledStatusB != ledStatusBOld)
+		{
+			ledStatusAOld = ledStatusA;
+			ledStatusBOld = ledStatusB;
+			ledcheck();
+			printf("Forcing led status change...\r\n");
+		}
+		
+		if (millis() - ledTimer >= LEDFREQ)
+		{
+			ledTimer = millis();
+			ledcheck();
+		}
 		
     }	// End of main loop
 }
@@ -198,7 +287,6 @@ ISR(INT0_vect)
 		powerStatusChanged = false;
 		powerStatusTime = 0;
 		powerStatus = false;
-		statled(LRED);
 		off(CHARGESEL);
 		_delay_ms(SWITCHDELAY);
 		off(SOURCESEL1);
@@ -208,82 +296,123 @@ ISR(INT0_vect)
 	}
 }
 
+void ledcheck()
+{
+	static uint8_t count = 0;
+	count++;
+	count = count & 0x03;
+	
+	switch (ledStatusA)
+	{
+		case OFF:
+			off(PWRLEDA);
+			off(PWRLEDB);
+			break;
+		case RED:
+			on(PWRLEDA);
+			off(PWRLEDB);
+			printf("ledA RED\r\n");
+			break;
+		case GREEN:
+			off(PWRLEDA);
+			on(PWRLEDB);
+			printf("ledA GREEN\r\n");
+			break;
+		case FASTRED:
+			off(PWRLEDB);
+			if (get(PWRLEDA)) off(PWRLEDA);
+			else on(PWRLEDA);
+			break;
+		case FLASHRED:
+			off(PWRLEDB);
+			if (count >= 2) on(PWRLEDA);
+			else off(PWRLEDA);
+			break;
+		case FASTGREEN:
+			off(PWRLEDA);
+			if (get(PWRLEDB)) off(PWRLEDB);
+			else on(PWRLEDB);
+			break;
+		case FLASHGREEN:
+			off(PWRLEDA);
+			if (count >= 2) on(PWRLEDB);
+			else off(PWRLEDB);
+			break;
+	}
+
+	switch (ledStatusB)
+	{
+		case OFF:
+			off(STATLEDA);
+			off(STATLEDB);
+			break;
+		case RED:
+			on(STATLEDA);
+			off(STATLEDB);
+			printf("ledB RED\r\n");
+			break;
+		case GREEN:
+			off(STATLEDA);
+			on(STATLEDB);
+			printf("ledB GREEN\r\n");
+			break;
+		case FASTRED:
+			off(STATLEDB);
+			if (get(STATLEDA)) off(STATLEDA);
+			else on(STATLEDA);
+			break;
+		case FLASHRED:
+			off(STATLEDB);
+			if (count >= 2) on(STATLEDA);
+			else off(STATLEDA);
+			break;
+		case FASTGREEN:
+			off(STATLEDA);
+			if (get(STATLEDB)) off(STATLEDB);
+			else on(STATLEDB);
+			break;
+		case FLASHGREEN:
+			off(STATLEDA);
+			if (count >= 2) on(STATLEDB);
+			else off(STATLEDB);
+			break;
+	}
+}
+
 void fanrun(unsigned long ms)
 {
 	// Turn fan on for a period of time
 	on(FANCTRL);
-	fanRunning = true;
+	fanStatus = true;
 	fanTurnOnTime = millis();
 	
 	#ifdef DEBUG
 		printf("Running fan for %lu ms.\r\n", ms);
 	#endif
 	
-	if (fanRunningTime < ms)
+	if (fanStatusTime < ms)
 	{
-		fanRunningTime = ms;
+		fanStatusTime = ms;
 	}
 }
 
 void fancheck()
 {
 	// Check if its time to turn the fan off
-	if (fanRunning && (millis() - fanTurnOnTime >= fanRunningTime))
+	if (fanStatus && (millis() - fanTurnOnTime >= fanStatusTime))
 	{
 		if (!fanOverride)
 		{
 			off(FANCTRL);
-			fanRunning = false;
+			fanStatus = false;
 			#ifdef DEBUG
-				printf("Turning fan off. Delay was %lu ms.\r\n", fanRunningTime);
+				printf("Turning fan off. Delay was %lu ms.\r\n", fanStatusTime);
 			#endif
-			fanRunningTime = 0;
+			fanStatusTime = 0;
 
 			#ifdef DEBUG
 				if (!powerStatus) printf("System shutting down...\r\n");
 			#endif
 		}
-	}
-}
-
-void pwrled(int col)
-{
-	switch(col)
-	{
-		case LOFF:
-			off(PWRLEDB);
-			off(PWRLEDA);
-			break;
-		
-		case LRED:
-			off(PWRLEDA);
-			on(PWRLEDB);
-			break;
-		
-		case LGREEN:
-			off(PWRLEDB);
-			on(PWRLEDA);
-			break;
-	}
-}
-
-void statled(int col)
-{
-	switch(col)
-	{
-		case LOFF:
-		off(STATLEDB);
-		off(STATLEDA);
-		break;
-		
-		case LRED:
-		off(STATLEDA);
-		on(STATLEDB);
-		break;
-		
-		case LGREEN:
-		off(STATLEDB);
-		on(STATLEDA);
-		break;
 	}
 }

@@ -10,6 +10,8 @@
 
 // -- Constants
 #define STATUSFREQ 5000
+#define LEDFREQ 500
+
 // Switching delays
 #define ONDELAY 2000
 #define SWITCHDELAY 5
@@ -28,11 +30,20 @@
 #define LRED 1
 #define LGREEN 2
 
+/*
+#define SPOWER 0
+#define SSWITCH 1
+#define SCHARGE 2
+#define SBATLOW 3
+#define SBATVLOW 4
+*/
+
 // -- Prototypes
 void pwrled(int col);
 void statled(int col);
 void fanrun(unsigned long ms);
 void fancheck();
+void ledcheck();
 //unsigned long adcread(uint8_t ch);
 
 #endif /* USVFIRMWARE_H_ */
