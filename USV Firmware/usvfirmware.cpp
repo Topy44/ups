@@ -192,24 +192,12 @@ int main(void)
 		
 		if (fanOverride && !fanStatus) fanrun(100);
 		
-		fancheck();
-
 		double bat1voltage;
 		double bat2voltage;
 		bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
 		bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
 		if (!chargeStatus) bat1voltage -= bat2voltage;
 		
-		#ifdef DEBUG
-			if (millis() - statusTimer >= STATUSFREQ)
-			{
-				statusTimer = millis();
-				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
-				printf("Battery 1 Voltage: %fV (Raw %lu) - Battery 2 Voltage: %fV (Raw: %lu)\r\n", bat1voltage, adcread(BAT1V), bat2voltage, adcread(BAT2V));
-				printf("TCNT2: %u\r\n", TCNT2);
-			}
-		#endif
-
 		bool batLowVoltage = false;
 		bool batVeryLowVoltage = false;
 		
@@ -305,6 +293,18 @@ int main(void)
 			ledcheck();
 		}
 		
+		#ifdef DEBUG
+		if (millis() - statusTimer >= STATUSFREQ)
+		{
+			statusTimer = millis();
+			printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
+			printf("Battery 1 Voltage: %fV (Raw %lu) - Battery 2 Voltage: %fV (Raw: %lu)\r\n", bat1voltage, adcread(BAT1V), bat2voltage, adcread(BAT2V));
+			printf("TCNT2: %u\r\n", TCNT2);
+		}
+		#endif
+
+		fancheck();
+
     }	// End of main loop
 }
 
