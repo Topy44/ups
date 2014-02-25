@@ -18,7 +18,7 @@
 
 #include "serial.h"
 #include "iomacros.h"
-#include "millis.h"		// Uses TIMER2
+#include "millis.h"		// Uses TIMER0
 
 enum ledstatus
 {
@@ -84,13 +84,20 @@ int main(void)
 	out(PWRLEDB);
 	out(OUTCTRL);
 	out(CHARGESEL);
+	out(BUZ);
+
+	off(BUZ);	// Piezo input high -> off
 		
 	EICRA |= (1<<ISC00);	// INT0 trigger on level change
-	EIMSK |= (1<<INT0);	// Enable INT0
+	EIMSK |= (1<<INT0);		// Enable INT0
 	
-	//ADMUX &= ~(1<<REFS0) | (1<<REFS1);
-	ADMUX |= (1<<REFS0) | (1<<REFS1);
+	ADMUX |= (1<<REFS0) | (1<<REFS1);	// Use external voltage reference
 	ADCSRA |= (1<<ADEN) | (1<<ADPS0) | (1<<ADPS1) | (1<<ADPS2);	// Enable ADC, Prescaler F_CPU/128
+	
+	TCCR2A |= (1<<WGM21);	// CTC Mode
+	TCCR2B |= (1<<CS21) | (1<<CS22);	// Prescaler F_CPU/256
+	OCR2A = 0x0C;
+	OCR2B = OCR2A - 1;
 	
 	sei();	// Enable interrupts. Use atomic blocks from here on
 
@@ -125,7 +132,9 @@ int main(void)
 		#endif
 	}
 	
-	_delay_ms(500);
+	buz(true);	// BEEP!
+	_delay_ms(200);
+	buz(false);
 	
 	adcTimer = millis();
 	statusTimer = millis();
@@ -196,6 +205,7 @@ int main(void)
 				if (!chargeStatus) bat1voltage -= bat2voltage;
 				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 				printf("Battery 1 Voltage: %fV (Raw %lu) - Battery 2 Voltage: %fV (Raw: %lu)\r\n", bat1voltage, adcread(BAT1V), bat2voltage, adcread(BAT2V));
+				printf("TCNT2: %u\r\n", TCNT2);
 			}
 		#endif
 
@@ -308,34 +318,43 @@ void ledcheck()
 		case OFF:
 			off(PWRLEDA);
 			off(PWRLEDB);
+			buz(false);
 			break;
 		case RED:
 			on(PWRLEDA);
 			off(PWRLEDB);
+			buz(false);
 			break;
 		case GREEN:
 			off(PWRLEDA);
 			on(PWRLEDB);
+			buz(false);
 			break;
 		case FASTRED:
 			off(PWRLEDB);
 			if (get(PWRLEDA)) off(PWRLEDA);
 			else on(PWRLEDA);
+			if (count >= 2) buz(true);
+			else buz(false);
 			break;
 		case FLASHRED:
 			off(PWRLEDB);
 			if (count >= 2) on(PWRLEDA);
 			else off(PWRLEDA);
+			buz(false);
 			break;
 		case FASTGREEN:
 			off(PWRLEDA);
 			if (get(PWRLEDB)) off(PWRLEDB);
 			else on(PWRLEDB);
+			if (count >= 2) buz(true);
+			else buz(false);
 			break;
 		case FLASHGREEN:
 			off(PWRLEDA);
 			if (count >= 2) on(PWRLEDB);
 			else off(PWRLEDB);
+			buz(false);
 			break;
 	}
 
@@ -344,34 +363,43 @@ void ledcheck()
 		case OFF:
 			off(STATLEDA);
 			off(STATLEDB);
+			buz(false);
 			break;
 		case RED:
 			on(STATLEDA);
 			off(STATLEDB);
+			buz(false);
 			break;
 		case GREEN:
 			off(STATLEDA);
 			on(STATLEDB);
+			buz(false);
 			break;
 		case FASTRED:
 			off(STATLEDB);
 			if (get(STATLEDA)) off(STATLEDA);
 			else on(STATLEDA);
+			if (count >= 2) buz(true);
+			else buz(false);
 			break;
 		case FLASHRED:
 			off(STATLEDB);
 			if (count >= 2) on(STATLEDA);
 			else off(STATLEDA);
+			buz(false);
 			break;
 		case FASTGREEN:
 			off(STATLEDA);
 			if (get(STATLEDB)) off(STATLEDB);
 			else on(STATLEDB);
+			if (count >= 2) buz(true);
+			else buz(false);
 			break;
 		case FLASHGREEN:
 			off(STATLEDA);
 			if (count >= 2) on(STATLEDB);
 			else off(STATLEDB);
+			buz(false);
 			break;
 	}
 }
@@ -425,4 +453,14 @@ unsigned long adcread(uint8_t ch)
 	value += (ADCH<<8);
 
 	return (value);
+}
+
+void buz(bool state)
+{
+	if (state) TCCR2A |= (1<<COM2B0);	// Toggle OC2B on Compare Match
+	else TCCR2A &= ~(1<<COM2B0); // Normal operation
+	#ifdef DEBUG
+		if (state) printf("Buzzer turned on...\r\n");
+		else printf("Buzzer turned off...\r\n");
+	#endif
 }

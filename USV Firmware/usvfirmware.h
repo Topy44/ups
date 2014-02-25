@@ -49,5 +49,6 @@ void fanrun(unsigned long ms);
 void fancheck();
 void ledcheck();
 unsigned long adcread(uint8_t ch);
+void buz(bool state);
 
 #endif /* USVFIRMWARE_H_ */
