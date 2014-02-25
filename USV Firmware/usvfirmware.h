@@ -16,6 +16,10 @@
 #define VDIV1 (25.5+4.9)/4.9	// Battery 1 voltage divider
 #define VDIV2 (25.5+12.4)/12.4	// Battery 2 voltage divider
 
+#define BATLOWV 7.0
+#define BATVLOWV 6.5
+#define BATSHUTOFF 6.3
+
 // Switching delays
 #define ONDELAY 2000
 #define SWITCHDELAY 5

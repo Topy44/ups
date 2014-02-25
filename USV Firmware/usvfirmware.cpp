@@ -193,16 +193,17 @@ int main(void)
 		if (fanOverride && !fanStatus) fanrun(100);
 		
 		fancheck();
+
+		double bat1voltage;
+		double bat2voltage;
+		bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
+		bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
+		if (!chargeStatus) bat1voltage -= bat2voltage;
 		
 		#ifdef DEBUG
 			if (millis() - statusTimer >= STATUSFREQ)
 			{
 				statusTimer = millis();
-				double bat1voltage;
-				double bat2voltage;
-				bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
-				bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
-				if (!chargeStatus) bat1voltage -= bat2voltage;
 				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 				printf("Battery 1 Voltage: %fV (Raw %lu) - Battery 2 Voltage: %fV (Raw: %lu)\r\n", bat1voltage, adcread(BAT1V), bat2voltage, adcread(BAT2V));
 				printf("TCNT2: %u\r\n", TCNT2);
@@ -211,6 +212,11 @@ int main(void)
 
 		bool batLowVoltage = false;
 		bool batVeryLowVoltage = false;
+		
+		if (bat1voltage < BATLOWV || bat2voltage < BATLOWV) batLowVoltage = true;
+		else batLowVoltage = false;
+		if (bat1voltage < BATVLOWV || bat2voltage < BATVLOWV) batVeryLowVoltage = true;
+		else batVeryLowVoltage = false;
 		
 		// Ext. Power on
 		if (powerStatus && !switchStatus)
@@ -264,6 +270,24 @@ int main(void)
 			ledStatusB = OFF;
 		}
 
+		if (!switchStatus && !powerStatus && (bat1voltage < BATSHUTOFF || bat2voltage < BATSHUTOFF));
+		{
+			buz(true);
+			_delay_ms(1000);
+			buz(false);
+			_delay_ms(500);
+			buz(true);
+			_delay_ms(1000);
+			buz(false);
+			_delay_ms(500);
+			buz(true);
+			_delay_ms(1000);
+			buz(false);
+			off(FANCTRL);
+			_delay_ms(30000);	// Not an infinite loop to avoid hanging in case of error
+		}
+
+		// Handle LEDs and piezo buzzer
 		static ledstatus ledStatusAOld = OFF;
 		static ledstatus ledStatusBOld = OFF;
 		
