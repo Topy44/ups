@@ -44,6 +44,6 @@ void statled(int col);
 void fanrun(unsigned long ms);
 void fancheck();
 void ledcheck();
-//unsigned long adcread(uint8_t ch);
+unsigned long adcread(uint8_t ch);
 
 #endif /* USVFIRMWARE_H_ */

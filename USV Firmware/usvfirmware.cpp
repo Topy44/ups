@@ -189,7 +189,13 @@ int main(void)
 			if (millis() - statusTimer >= STATUSFREQ)
 			{
 				statusTimer = millis();
+				double bat1voltage;
+				double bat2voltage;
+				bat1voltage = ((double)adcread(BAT1V)/1024*3)*((25.5+4.9)/4.9);
+				bat2voltage = ((double)adcread(BAT2V)/1024*3)*((25.5+12.4)/12.4);
+				if (!chargeStatus) bat1voltage -= bat2voltage;
 				printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), get(MECHSW), fanStatus, chargeStatus, get(BAT1STAT), get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
+				printf("Battery 1 Voltage: %fV (Raw %lu) - Battery 2 Voltage: %fV (Raw: %lu)\r\n", bat1voltage, adcread(BAT1V), bat2voltage, adcread(BAT2V));
 			}
 		#endif
 
@@ -216,7 +222,6 @@ int main(void)
 			// LEDs: Off/Flash Green			Off, ext. power, fan running
 			ledStatusA = OFF;
 			ledStatusB = FLASHGREEN;
-			//printf("Lüfternachlauf Netzbetrieb");
 		}
 	
 		// Ext. power off
@@ -237,14 +242,12 @@ int main(void)
 			// LEDs: Red/Off				On, bat. power
 			ledStatusA = RED;
 			ledStatusB = OFF;
-			//printf("Batteriebetrieb");
 		}
 		else if (fanStatus)
 		{
 			// LEDs: Off/Flash Red			Off, bat.power, fan running
 			ledStatusA = FLASHRED;
 			ledStatusB = OFF;
-			//printf("Lüfternachlauf Batteriebetrieb\r\n");
 		}
 		else
 		{
@@ -311,12 +314,10 @@ void ledcheck()
 		case RED:
 			on(PWRLEDA);
 			off(PWRLEDB);
-			printf("ledA RED\r\n");
 			break;
 		case GREEN:
 			off(PWRLEDA);
 			on(PWRLEDB);
-			printf("ledA GREEN\r\n");
 			break;
 		case FASTRED:
 			off(PWRLEDB);
@@ -349,12 +350,10 @@ void ledcheck()
 		case RED:
 			on(STATLEDA);
 			off(STATLEDB);
-			printf("ledB RED\r\n");
 			break;
 		case GREEN:
 			off(STATLEDA);
 			on(STATLEDB);
-			printf("ledB GREEN\r\n");
 			break;
 		case FASTRED:
 			off(STATLEDB);
@@ -415,4 +414,17 @@ void fancheck()
 			#endif
 		}
 	}
+}
+
+unsigned long adcread(uint8_t ch)
+{
+	ADMUX = ch;
+	ADCSRA |= (1 << ADSC);
+	while (!(ADCSRA & (1 << ADIF)));
+	ADCSRA |= (1 << ADIF);
+	long value;
+	value = ADCL;
+	value += (ADCH<<8);
+
+	return (value);
 }
