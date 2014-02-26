@@ -486,8 +486,4 @@ void buz(bool state)
 {
 	if (state) TCCR2A |= (1<<COM2B0);	// Toggle OC2B on Compare Match
 	else TCCR2A &= ~(1<<COM2B0); // Normal operation
-	#ifdef DEBUG
-		if (state) printf("Buzzer turned on...\r\n");
-		else printf("Buzzer turned off...\r\n");
-	#endif
 }
