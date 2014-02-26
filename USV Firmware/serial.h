@@ -1,3 +1,8 @@
+/*
+Serial library by Lukas Schauer
+Licensed under GPLv3
+*/
+
 #ifndef __SERIAL_H__
 #define __SERIAL_H__
 

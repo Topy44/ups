@@ -1,10 +1,11 @@
 /*
- * pins.h
- *
- * Created: 28.01.2014 03:48:53
- *  Author: Topy
+ * Project: 12V DC Uninterruptable Power Supply
+ * File: pins.h
+ * Author: Thorin Hopkins (topy at untergrund dot net)
+ * Copyright: (C) 2014 by Thorin Hopkins
+ * License: GNU GPL v3 (see LICENSE.txt)
+ * Web: https://github.com/Topy44/ups
  */ 
-
 
 #ifndef PINS_H_
 #define PINS_H_
@@ -20,9 +21,13 @@
 #define AUX			0,B
 #define STATLEDA	1,B
 #define STATLEDB	2,B
+// #define STATLEDA	2,B
+// #define STATLEDB	1,B
 #define OUTCTRL		0,C
 #define PWRLEDA		1,C
 #define PWRLEDB		2,C
+// #define PWRLEDA		2,C
+// #define PWRLEDB		1,C
 #define MECHSW		3,C
 #define BAT1STAT	4,C
 #define BAT2STAT	5,C

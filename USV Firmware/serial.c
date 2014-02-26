@@ -1,5 +1,6 @@
 /*
-Serial library by Lukas Schauer, unknown license
+Serial library by Lukas Schauer
+Licensed under GPLv3
 */
 
 #include "bitset.h"

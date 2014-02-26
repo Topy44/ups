@@ -1,9 +1,12 @@
 /*
- * usvfirmware.h
- *
- * Created: 13.02.2014 03:27:04
- *  Author: Thorin Hopkins
+ * Project: 12V DC Uninterruptable Power Supply
+ * File: usvfirmware.h
+ * Author: Thorin Hopkins (topy at untergrund dot net)
+ * Copyright: (C) 2014 by Thorin Hopkins
+ * License: GNU GPL v3 (see LICENSE.txt)
+ * Web: https://github.com/Topy44/ups
  */ 
+
 
 #ifndef USVFIRMWARE_H_
 #define USVFIRMWARE_H_
