@@ -261,8 +261,12 @@ int main(void)
 			ledStatusB = OFF;
 		}
 
-		if (!switchStatus && !powerStatus && (bat1voltage < BATSHUTOFF || bat2voltage < BATSHUTOFF));
+		if (switchStatus && !powerStatus && (bat1voltage < BATSHUTOFF || bat2voltage < BATSHUTOFF))
 		{
+			#ifdef DEBUG
+				printf("Battery voltage critical, system shutting down.\r\n");
+				printf("Battery 1: %fV - Battery 2: %fV", bat1voltage, bat2voltage);
+			#endif
 			buz(true);
 			_delay_ms(1000);
 			buz(false);
@@ -302,7 +306,6 @@ int main(void)
 			statusTimer = millis();
 			printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 			printf("Battery 1 Voltage: %fV (Raw %lu) - Battery 2 Voltage: %fV (Raw: %lu)\r\n", bat1voltage, adcread(BAT1V), bat2voltage, adcread(BAT2V));
-			printf("TCNT2: %u\r\n", TCNT2);
 		}
 		#endif
 
