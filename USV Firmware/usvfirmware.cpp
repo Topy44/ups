@@ -55,6 +55,9 @@ volatile bool chargeStatus = false;
 volatile millis_t adcTimer = 0;
 volatile millis_t statusTimer = 0;
 volatile millis_t ledTimer = 0;
+volatile millis_t batLowTimer = millis();
+
+volatile int batLowCounter = 0;
 
 volatile bool alarm = false;
 
@@ -160,6 +163,7 @@ int main(void)
 	adcTimer = millis();
 	statusTimer = millis();
 	ledTimer = millis();
+	batLowTimer = millis();
 
 	printf("Init complete, entering main loop...\r\n");
 
@@ -292,14 +296,25 @@ int main(void)
 			#endif
 		}
 
-		if (!switchStatus && !powerStatus && (bat1voltage < BATSHUTOFF || bat2voltage < BATSHUTOFF))
+		if (millis() - batLowTimer >= 100)
 		{
+			batLowTimer = millis();
+			if (!switchStatus && !powerStatus && (bat1voltage < BATSHUTOFF || bat2voltage < BATSHUTOFF))
+			{
+				batLowCounter++;
+			}
+			else batLowCounter = 0;
+		}
+
+		if (batLowCounter >= 20)
+		{
+			batLowCounter = 0;
 			while (!get(MECHSW) && !get(OPTO))
 			{
-				// Wait for voltage to recover or system to shut down
+				// Panic! Wait for voltage to recover or system to shut down.
 				#ifdef DEBUG
-					printf("Battery voltage critical!.\r\n");
-					printf("Battery 1: %fV - Battery 2: %fV", bat1voltage, bat2voltage);
+				printf("Battery voltage critical!.\r\n");
+				printf("Battery 1: %fV - Battery 2: %fV\r\n", bat1voltage, bat2voltage);
 				#endif
 				off(OUTCTRL);
 				buz(true);
@@ -314,6 +329,10 @@ int main(void)
 				_delay_ms(200);
 				wdt_reset();
 			}
+			
+			switchStatus = !get(MECHSW);
+			bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
+			bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
 		}
 
 		// Handle LEDs and piezo buzzer
