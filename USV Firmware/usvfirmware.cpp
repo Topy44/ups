@@ -55,6 +55,8 @@ volatile millis_t adcTimer = 0;
 volatile millis_t statusTimer = 0;
 volatile millis_t ledTimer = 0;
 
+volatile bool alarm = false;
+
 int main(void)
 {
 	_delay_ms(200);	// Wait a bit to escape reset loops
@@ -192,94 +194,107 @@ int main(void)
 
 		if (!get(MECHSW) || chargeStatus) fanOverride = true;	// Force fan on if mech. switch is on or batteries are charging
 		else fanOverride = false;
-		
+
 		if (fanOverride && !fanStatus) fanrun(100);
-		
+
 		double bat1voltage;
 		double bat2voltage;
 		bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
 		bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
 		if (!chargeStatus) bat1voltage -= bat2voltage;
 		
-		bool batLowVoltage = false;
-		bool batVeryLowVoltage = false;
+		bool static batLowVoltage = false;
+		bool static batVeryLowVoltage = false;
 		
 		if (bat1voltage < BATLOWV || bat2voltage < BATLOWV) batLowVoltage = true;
-		else batLowVoltage = false;
+		else if (bat1voltage > BATLOWV+0.1 && bat2voltage > BATLOWV+0.1) batLowVoltage = false;
 		if (bat1voltage < BATVLOWV || bat2voltage < BATVLOWV) batVeryLowVoltage = true;
-		else batVeryLowVoltage = false;
-		
+		else if (bat1voltage > BATVLOWV+0.1 && bat2voltage > BATVLOWV+0.1) batVeryLowVoltage = false;
+
 		// Ext. Power on
 		if (powerStatus && !switchStatus)
 		{
 			// LEDs: Green/Green			On, ext. power
 			ledStatusA = GREEN;
 			ledStatusB = GREEN;
+			alarm = false;
 		}
 		else if (powerStatus && !chargeStatus)
 		{
 			// LEDs: Flash Red/Off			Off, charging
 			ledStatusA = FLASHRED;
 			ledStatusB = OFF;
+			alarm = false;
 		}
 		else if (powerStatus && fanStatus)
 		{
 			// LEDs: Off/Flash Green			Off, ext. power, fan running
 			ledStatusA = OFF;
 			ledStatusB = FLASHGREEN;
+			alarm = false;
 		}
 	
 		// Ext. power off
+		else if (!switchStatus && batVeryLowVoltage)
+		{
+			// LEDs: Flash Red (fast)/Off		On, bat. power, bat. very low, sound alarm
+			ledStatusA = FASTRED;
+			ledStatusB = OFF;
+			alarm = true;
+		}
 		else if (!switchStatus && batLowVoltage)
 		{
 			// LEDs: Flash Red/Off			On, bat. power, bat. low
 			ledStatusA = FLASHRED;
 			ledStatusB = OFF;
-		}
-		else if (!switchStatus && batVeryLowVoltage)
-		{
-			// LEDs: Flash Red (fast)/Off		On, bat. power, bat. low, sound alarm
-			ledStatusA = FASTRED;
-			ledStatusB = OFF;
+			alarm = false;
 		}
 		else if (!switchStatus)
 		{
 			// LEDs: Red/Off				On, bat. power
 			ledStatusA = RED;
 			ledStatusB = OFF;
+			alarm = false;
 		}
 		else if (fanStatus)
 		{
 			// LEDs: Off/Flash Red			Off, bat.power, fan running
 			ledStatusA = FLASHRED;
 			ledStatusB = OFF;
+			alarm = false;
 		}
 		else
 		{
 			// LEDs: Off/Off				Undefined state
 			ledStatusA = OFF;
 			ledStatusB = OFF;
+			alarm = false;
+			#ifdef DEBUG
+				printf("Undefined state (or off)\r\n");
+			#endif
 		}
 
-		if (switchStatus && !powerStatus && (bat1voltage < BATSHUTOFF || bat2voltage < BATSHUTOFF))
+		if (!switchStatus && !powerStatus && (bat1voltage < BATSHUTOFF || bat2voltage < BATSHUTOFF))
 		{
-			#ifdef DEBUG
-				printf("Battery voltage critical, system shutting down.\r\n");
-				printf("Battery 1: %fV - Battery 2: %fV", bat1voltage, bat2voltage);
-			#endif
-			buz(true);
-			_delay_ms(1000);
-			buz(false);
-			_delay_ms(500);
-			buz(true);
-			_delay_ms(1000);
-			buz(false);
-			_delay_ms(500);
-			buz(true);
-			_delay_ms(1000);
-			buz(false);
-			off(FANCTRL);
-			_delay_ms(30000);	// Not an infinite loop to avoid hanging in case of error
+			while (!get(MECHSW) && !get(OPTO))
+			{
+				// Wait for voltage to recover or system to shut down
+				#ifdef DEBUG
+					printf("Battery voltage critical!.\r\n");
+					printf("Battery 1: %fV - Battery 2: %fV", bat1voltage, bat2voltage);
+				#endif
+				off(OUTCTRL);
+				buz(true);
+				off(PWRLEDB);
+				on(PWRLEDA);
+				off(STATLEDB);
+				on(STATLEDA);
+				_delay_ms(300);
+				buz(false);
+				off(PWRLEDA);
+				off(STATLEDA);
+				_delay_ms(200);
+			}
 		}
 
 		// Handle LEDs and piezo buzzer
@@ -343,48 +358,47 @@ void ledcheck()
 	count++;
 	count = count & 0x03;
 	
+	if (alarm)
+	{
+		if (count >= 2) buz(true);
+		else buz(false);
+	}
+	else buz(false);
+
 	switch (ledStatusA)
 	{
 		case OFF:
 			off(PWRLEDA);
 			off(PWRLEDB);
-			buz(false);
 			break;
 		case RED:
 			on(PWRLEDA);
 			off(PWRLEDB);
-			buz(false);
 			break;
 		case GREEN:
 			off(PWRLEDA);
 			on(PWRLEDB);
-			buz(false);
 			break;
 		case FASTRED:
 			off(PWRLEDB);
 			if (get(PWRLEDA)) off(PWRLEDA);
 			else on(PWRLEDA);
 			if (count >= 2) buz(true);
-			else buz(false);
 			break;
 		case FLASHRED:
 			off(PWRLEDB);
 			if (count >= 2) on(PWRLEDA);
 			else off(PWRLEDA);
-			buz(false);
 			break;
 		case FASTGREEN:
 			off(PWRLEDA);
 			if (get(PWRLEDB)) off(PWRLEDB);
 			else on(PWRLEDB);
-			if (count >= 2) buz(true);
-			else buz(false);
 			break;
 		case FLASHGREEN:
 			off(PWRLEDA);
 			if (count >= 2) on(PWRLEDB);
 			else off(PWRLEDB);
-			buz(false);
 			break;
 	}
 
@@ -393,43 +407,34 @@ void ledcheck()
 		case OFF:
 			off(STATLEDA);
 			off(STATLEDB);
-			buz(false);
 			break;
 		case RED:
 			on(STATLEDA);
 			off(STATLEDB);
-			buz(false);
 			break;
 		case GREEN:
 			off(STATLEDA);
 			on(STATLEDB);
-			buz(false);
 			break;
 		case FASTRED:
 			off(STATLEDB);
 			if (get(STATLEDA)) off(STATLEDA);
 			else on(STATLEDA);
-			if (count >= 2) buz(true);
-			else buz(false);
 			break;
 		case FLASHRED:
 			off(STATLEDB);
 			if (count >= 2) on(STATLEDA);
 			else off(STATLEDA);
-			buz(false);
 			break;
 		case FASTGREEN:
 			off(STATLEDA);
 			if (get(STATLEDB)) off(STATLEDB);
 			else on(STATLEDB);
-			if (count >= 2) buz(true);
-			else buz(false);
 			break;
 		case FLASHGREEN:
 			off(STATLEDA);
 			if (count >= 2) on(STATLEDB);
 			else off(STATLEDB);
-			buz(false);
 			break;
 	}
 }
