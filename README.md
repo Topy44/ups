@@ -15,4 +15,5 @@ Non-standard libraries used:
 ---
 
 All source released under GPLv3
+
 Copyright 2014 Thorin Hopkins
