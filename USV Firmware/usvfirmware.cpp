@@ -15,6 +15,7 @@
 #include "pins.h"
 
 #include <avr/interrupt.h>
+#include <avr/wdt.h>
 #include <util/delay.h>
 #include <util/atomic.h>
 #include <stdbool.h>
@@ -59,6 +60,10 @@ volatile bool alarm = false;
 
 int main(void)
 {
+	out(BUZ);
+	wdt_enable(WDTO_8S);
+	wdt_reset();
+
 	_delay_ms(200);	// Wait a bit to escape reset loops
 
 	millis_init();
@@ -89,7 +94,6 @@ int main(void)
 	out(PWRLEDB);
 	out(OUTCTRL);
 	out(CHARGESEL);
-	out(BUZ);
 
 	off(BUZ);	// Piezo input high -> off
 		
@@ -106,17 +110,32 @@ int main(void)
 	
 	sei();	// Enable interrupts. Use atomic blocks from here on
 
-	switchStatus = !get(MECHSW);
+	switchStatus = !get(MECHSW);	// Go sure to call switch routine once at start
 
-	// Figure out initial state
 	if (get(OPTO))
 	{
 		// External Power turned on
 		powerStatusChanged = true;
 		powerStatusTime = millis();
-		#ifdef DEBUG
-			printf("External power turned on.\r\n");
-		#endif
+	}
+	else
+	{
+		// External Power turned off
+		powerStatusChanged = false;
+		powerStatusTime = 0;
+		powerStatus = false;
+		off(CHARGESEL);
+		_delay_ms(SWITCHDELAY);
+		off(SOURCESEL1);
+		_delay_ms(SWITCHDELAY);
+		off(SOURCESEL2);
+	}
+	
+	if (get(OPTO))
+	{
+		// External Power turned on
+		powerStatusChanged = true;
+		powerStatusTime = millis();
 	}
 	else
 	{
@@ -132,9 +151,6 @@ int main(void)
 			_delay_ms(SWITCHDELAY);
 			off(SOURCESEL2);
 		}
-		#ifdef DEBUG
-			printf("External power turned off.\r\n");
-		#endif
 	}
 	
 	buz(true);	// BEEP!
@@ -150,6 +166,8 @@ int main(void)
 	// Main loop
     while(1)
     {
+		wdt_reset();
+		
 		if (switchStatus != get(MECHSW))
 		{
 			switchStatus = get(MECHSW);
@@ -294,6 +312,7 @@ int main(void)
 				off(PWRLEDA);
 				off(STATLEDA);
 				_delay_ms(200);
+				wdt_reset();
 			}
 		}
 
