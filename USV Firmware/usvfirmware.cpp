@@ -365,7 +365,7 @@ int main(void)
 		{
 			statusTimer = millis();
 			printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
-			printf("Battery 1 Voltage: %fV (Raw %u) - Battery 2 Voltage: %fV (Raw: %u)\r\n", bat1voltage, bat1raw, bat2voltage, bat2raw);
+			printf("Battery 1 Voltage: %.2fV (Raw %u) - Battery 2 Voltage: %.2fV (Raw: %u)\r\n", bat1voltage, bat1raw, bat2voltage, bat2raw);
 		}
 		#endif
 
