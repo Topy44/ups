@@ -44,6 +44,9 @@ volatile bool powerStatus = false;
 volatile uint8_t switchStatus = false;	// Needs to be uint8_t because it gets compared to a get() result
 volatile millis_t switchStatusTime = 0;
 
+volatile bool updateWait = false;
+volatile millis_t updateWaitTime = 0;
+
 volatile millis_t fanTurnOnTime = 0;
 volatile millis_t fanStatusTime = 0;
 volatile bool fanStatus = false;
@@ -182,6 +185,9 @@ int main(void)
 				powerStatusChanged = false;
 				powerStatus = true;
 				fanrun(FANEXTPOWERON);
+
+				updateWait = true;
+				updateWaitTime = millis();
 			}
 		}
 		
@@ -209,71 +215,75 @@ int main(void)
 		if (bat1voltage < BATVLOWV || bat2voltage < BATVLOWV) batVeryLowVoltage = true;
 		else if (bat1voltage > BATVLOWV+0.1 && bat2voltage > BATVLOWV+0.1) batVeryLowVoltage = false;
 
-		// Ext. Power on
-		if (powerStatus && !switchStatus)
+		if (!updateWait || millis() - updateWaitTime >= UPDATEDELAY)
 		{
-			// LEDs: Green/Green			On, ext. power
-			ledStatusA = GREEN;
-			ledStatusB = GREEN;
-			alarm = false;
-		}
-		else if (powerStatus && chargeStatus)
-		{
-			// LEDs: Flash Red/Off			Off, charging
-			ledStatusA = FLASHRED;
-			ledStatusB = OFF;
-			alarm = false;
-		}
-		else if (powerStatus && fanStatus)
-		{
-			// LEDs: Off/Flash Green			Off, ext. power, fan running
-			ledStatusA = OFF;
-			ledStatusB = FLASHGREEN;
-			alarm = false;
-		}
-		else if (powerStatus)
-		{
-			// LEDs: Off/Off				Off, ext. power, fan off
-			ledStatusA = OFF;
-			ledStatusB = OFF;
-			alarm = false;
-		}
+			updateWait = false;
+			// Ext. Power on
+			if (powerStatus && !switchStatus)
+			{
+				// LEDs: Green/Green			On, ext. power
+				ledStatusA = GREEN;
+				ledStatusB = GREEN;
+				alarm = false;
+			}
+			else if (powerStatus && chargeStatus)
+			{
+				// LEDs: Flash Red/Off			Off, charging
+				ledStatusA = FLASHRED;
+				ledStatusB = OFF;
+				alarm = false;
+			}
+			else if (powerStatus && fanStatus)
+			{
+				// LEDs: Off/Flash Green			Off, ext. power, fan running
+				ledStatusA = OFF;
+				ledStatusB = FLASHGREEN;
+				alarm = false;
+			}
+			else if (powerStatus)
+			{
+				// LEDs: Off/Off				Off, ext. power, fan off
+				ledStatusA = OFF;
+				ledStatusB = OFF;
+				alarm = false;
+			}
 	
-		// Ext. power off
-		else if (!switchStatus && batVeryLowVoltage)
-		{
-			// LEDs: Flash Red (fast)/Off		On, bat. power, bat. very low, sound alarm
-			ledStatusA = FASTRED;
-			ledStatusB = OFF;
-			alarm = true;
-		}
-		else if (!switchStatus && batLowVoltage)
-		{
-			// LEDs: Flash Red/Off			On, bat. power, bat. low
-			ledStatusA = FLASHRED;
-			ledStatusB = OFF;
-			alarm = false;
-		}
-		else if (!switchStatus)
-		{
-			// LEDs: Red/Off				On, bat. power
-			ledStatusA = RED;
-			ledStatusB = OFF;
-			alarm = false;
-		}
-		else if (fanStatus)
-		{
-			// LEDs: Off/Flash Red			Off, bat.power, fan running
-			ledStatusA = FLASHRED;
-			ledStatusB = OFF;
-			alarm = false;
-		}
-		else
-		{
-			// LEDs: Off/Off				Undefined state or off
-			ledStatusA = OFF;
-			ledStatusB = OFF;
-			alarm = false;
+			// Ext. power off
+			else if (!switchStatus && batVeryLowVoltage)
+			{
+				// LEDs: Flash Red (fast)/Off		On, bat. power, bat. very low, sound alarm
+				ledStatusA = FASTRED;
+				ledStatusB = OFF;
+				alarm = true;
+			}
+			else if (!switchStatus && batLowVoltage)
+			{
+				// LEDs: Flash Red/Off			On, bat. power, bat. low
+				ledStatusA = FLASHRED;
+				ledStatusB = OFF;
+				alarm = false;
+			}
+			else if (!switchStatus)
+			{
+				// LEDs: Red/Off				On, bat. power
+				ledStatusA = RED;
+				ledStatusB = OFF;
+				alarm = false;
+			}
+			else if (fanStatus)
+			{
+				// LEDs: Off/Flash Red			Off, bat.power, fan running
+				ledStatusA = FLASHRED;
+				ledStatusB = OFF;
+				alarm = false;
+			}
+			else
+			{
+				// LEDs: Off/Off				Undefined state or off
+				ledStatusA = OFF;
+				ledStatusB = OFF;
+				alarm = false;
+			}
 		}
 
 		if (millis() - batLowTimer >= 100)
@@ -383,7 +393,6 @@ ISR(INT0_vect)
 	{
 		// External Power turned off
 		powerStatusChanged = false;
-		powerStatusTime = 0;
 		powerStatus = false;
 		off(CHARGESEL);
 		_delay_ms(SWITCHDELAY);
@@ -392,6 +401,8 @@ ISR(INT0_vect)
 		off(SOURCESEL2);
 		_delay_ms(ONDELAY);
 		fanStatusTime = 0;	// Stop fan from running on battery power
+		updateWait = true;
+		updateWaitTime = millis();
 	}
 }
 

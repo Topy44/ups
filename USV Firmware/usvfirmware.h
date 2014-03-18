@@ -15,6 +15,8 @@
 #define STATUSFREQ 1000
 #define LEDFREQ 500
 
+#define UPDATEDELAY 200	// Do not update LEDs and alarm after switching for X
+
 #define VREF 3	// Reference voltage for ADC
 #define VDIV1 (25.5+4.9)/4.9	// Battery 1 voltage divider
 #define VDIV2 (25.5+12.4)/12.4	// Battery 2 voltage divider
