@@ -19,7 +19,6 @@
 #include <util/delay.h>
 #include <util/atomic.h>
 #include <stdbool.h>
-
 #include "serial.h"
 #include "iomacros.h"
 #include "millis.h"		// Uses TIMER0
@@ -340,8 +339,10 @@ int main(void)
 		#ifdef DEBUG
 		if (millis() - statusTimer >= STATUSFREQ)
 		{
-			statusTimer = millis();
-			printf("System status at %lu:\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", millis(), !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
+			millis_t now;
+			now = millis();
+			statusTimer = now;
+			printf("System status at %lu:%02lu.%02lu (since system start):\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", (now/1000/60/60), (now/1000/60) % 60, (now/1000) % 60, !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 			printf("Battery 1 Voltage: %.2fV (Raw %u) - Battery 2 Voltage: %.2fV (Raw: %u)\r\n", bat1voltage, bat1raw, bat2voltage, bat2raw);
 		}
 		#endif
