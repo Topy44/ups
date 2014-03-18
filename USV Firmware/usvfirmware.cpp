@@ -164,7 +164,6 @@ int main(void)
 			{
 				// Mech. Switch turned off
 				off(OUTCTRL);	// Turn off output
-				fanrun(FANMECHSWOFF);
 				#ifdef DEBUG
 					printf("Mech.Sw. turned off.\r\n");
 				#endif
@@ -194,7 +193,7 @@ int main(void)
 		if (!get(MECHSW) || chargeStatus) fanOverride = true;	// Force fan on if mech. switch is on or batteries are charging
 		else fanOverride = false;
 
-		if (fanOverride && !fanStatus) fanrun(100);
+		if (fanOverride && !fanStatus) fanrun(1000);
 
 		double bat1voltage, bat2voltage;
 		unsigned int bat1raw, bat2raw;
@@ -342,8 +341,19 @@ int main(void)
 			millis_t now;
 			now = millis();
 			statusTimer = now;
-			printf("System status at %lu:%02lu.%02lu (since system start):\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", (now/1000/60/60), (now/1000/60) % 60, (now/1000) % 60, !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
+			printf("System status at %lu:%02lu:%02lu (since system start):\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", (now/1000/60/60), (now/1000/60) % 60, (now/1000) % 60, !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 			printf("Battery 1 Voltage: %.2fV (Raw %u) - Battery 2 Voltage: %.2fV (Raw: %u)\r\n", bat1voltage, bat1raw, bat2voltage, bat2raw);
+			if (fanStatus)
+			{
+				if (fanOverride)
+				{
+					printf("Fan override is on.\r\n");
+				}
+				else
+				{
+					printf("Fan running for another %lums.\r\n", (fanTurnOnTime + fanStatusTime) - now);
+				}
+			}
 		}
 		#endif
 
@@ -470,13 +480,10 @@ void fanrun(unsigned long ms)
 	fanTurnOnTime = millis();
 	
 	#ifdef DEBUG
-		printf("Running fan for %lu ms.\r\n", ms);
+		printf("Running fan for %lums (or until override is off).\r\n", ms);
 	#endif
 	
-	if (fanStatusTime < ms)
-	{
-		fanStatusTime = ms;
-	}
+	fanStatusTime = ms;
 }
 
 void fancheck()
