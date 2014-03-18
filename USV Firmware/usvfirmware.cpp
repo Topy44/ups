@@ -81,7 +81,7 @@ int main(void)
 		printf("Debug build!\r\n");
 	#endif
 	
-	printf("Configuration:\r\nBattery low warning threshold: %.2fV\r\nBattery very low warning threshold: %.2fV\r\nBattery discharged shut-off threshold: %.2fV\r\nRelay switching delay: %dms\r\nFan turn off delay: %dS\r\nReference voltage: %.2fV\r\nBattery 1 voltage divider ratio: %f\r\nBattery 2 voltage divider ratio: %f\r\n", BATLOWV, BATVLOWV, BATSHUTOFF, SWITCHDELAY, FANEXTPOWERON, (double)VREF, VDIV1, VDIV2);
+	printf("Configuration:\r\nBattery low warning threshold: %.2fV\r\nBattery very low warning threshold: %.2fV\r\nBattery discharged shut-off threshold: %.2fV\r\nRelay switching delay: %dms\r\nFan turn off delay: %luS\r\nReference voltage: %.2fV\r\nBattery 1 voltage divider ratio: %f\r\nBattery 2 voltage divider ratio: %f\r\n", BATLOWV, BATVLOWV, BATSHUTOFF, SWITCHDELAY, FANEXTPOWERON, (double)VREF, VDIV1, VDIV2);
 
 	in(OPTO);
 	in(MECHSW);
@@ -373,6 +373,7 @@ int main(void)
 			off(CHARGESEL);
 			_delay_ms(2000);
 			on(CHARGESEL);
+			_delay_ms(500);		// Wait for voltage to stabilize
 			printf("Cycling batteries to restart charge timer\r\n");
 		}
 
@@ -414,8 +415,8 @@ void ledcheck()
 	
 	if (alarm)
 	{
-		if (count >= 2) buz(false);
-		else buz(true);
+		if (count >= 2) buz(true);
+		else buz(false);
 	}
 	else buz(false);
 
