@@ -403,8 +403,8 @@ void ledcheck()
 	
 	if (alarm)
 	{
-		if (count >= 2) buz(true);
-		else buz(false);
+		if (count >= 2) buz(false);
+		else buz(true);
 	}
 	else buz(false);
 
