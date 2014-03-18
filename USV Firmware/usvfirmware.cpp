@@ -73,6 +73,7 @@ int main(void)
 	serial_init();
 
 	printf("12V USV v0.2.0\r\n(c)2014 Thorin Hopkins\r\n");
+	printf("Build %s %s\r\n", __DATE__, __TIME__);
 
 	#ifdef DEBUG
 		printf("Debug build!\r\n");
@@ -223,7 +224,7 @@ int main(void)
 		double bat2voltage;
 		bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
 		bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
-		if (!chargeStatus) bat1voltage -= bat2voltage;
+		if (!get(CHARGESEL)) bat1voltage -= bat2voltage;
 		
 		bool static batLowVoltage = false;
 		bool static batVeryLowVoltage = false;
@@ -292,7 +293,7 @@ int main(void)
 			ledStatusB = OFF;
 			alarm = false;
 			#ifdef DEBUG
-				printf("Undefined state (or off)\r\n");
+				// printf("Undefined state (or off)\r\n");
 			#endif
 		}
 
@@ -331,7 +332,7 @@ int main(void)
 			}
 			
 			switchStatus = !get(MECHSW);
-			bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;
+			bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;		// What?
 			bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
 		}
 
