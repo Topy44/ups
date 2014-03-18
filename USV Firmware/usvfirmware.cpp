@@ -71,12 +71,14 @@ int main(void)
 	millis_init();
 	serial_init();
 
-	printf("12V USV v0.2.0\r\n(c)2014 Thorin Hopkins\r\n");
+	printf("12V USV v0.3.0\r\n(c)2014 Thorin Hopkins\r\n");
 	printf("Built %s %s\r\n", __DATE__, __TIME__);
 
 	#ifdef DEBUG
 		printf("Debug build!\r\n");
 	#endif
+	
+	printf("Configuration:\r\nBattery low warning threshold: %.2fV\r\nBattery very low warning threshold: %.2fV\r\nBattery discharged shut-off threshold: %.2fV\r\nRelay switching delay: %dms\r\nFan turn off delay: %dS\r\n", BATLOWV, BATVLOWV, BATSHUTOFF, SWITCHDELAY, FANEXTPOWERON);
 
 	in(OPTO);
 	in(MECHSW);
