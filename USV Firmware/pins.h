@@ -19,13 +19,13 @@
 #define SOURCESEL2	6,D
 #define SOURCESEL1	7,D
 #define AUX			0,B
-#define STATLEDA	1,B
-#define STATLEDB	2,B
+#define STATLEDA	1,C
+#define STATLEDB	2,C
 // #define STATLEDA	2,B
 // #define STATLEDB	1,B
 #define OUTCTRL		0,C
-#define PWRLEDA		1,C
-#define PWRLEDB		2,C
+#define PWRLEDA		1,B
+#define PWRLEDB		2,B
 // #define PWRLEDA		2,C
 // #define PWRLEDB		1,C
 #define MECHSW		3,C
