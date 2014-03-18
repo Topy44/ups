@@ -158,17 +158,13 @@ int main(void)
 			{
 				// Mech. Switch turned on
 				on(OUTCTRL);	// Turn on output
-				#ifdef DEBUG
-					printf("Mech.Sw. turned on.\r\n");
-				#endif
+				printf("Mech.Sw. turned on.\r\n");
 			}
 			else
 			{
 				// Mech. Switch turned off
 				off(OUTCTRL);	// Turn off output
-				#ifdef DEBUG
-					printf("Mech.Sw. turned off.\r\n");
-				#endif
+				printf("Mech.Sw. turned off.\r\n");
 			}
 		}
 	
@@ -296,10 +292,8 @@ int main(void)
 			while (!get(MECHSW) && !get(OPTO))
 			{
 				// Panic! Wait for voltage to recover or system to shut down.
-				#ifdef DEBUG
 				printf("Battery voltage critical!.\r\n");
 				printf("Battery 1: %fV - Battery 2: %fV\r\n", bat1voltage, bat2voltage);
-				#endif
 				off(OUTCTRL);
 				buz(true);
 				off(PWRLEDB);
@@ -337,7 +331,6 @@ int main(void)
 			ledcheck();
 		}
 		
-		#ifdef DEBUG
 		if (millis() - statusTimer >= STATUSFREQ)
 		{
 			millis_t now;
@@ -357,7 +350,6 @@ int main(void)
 				}
 			}
 		}
-		#endif
 
 		fancheck();
 
@@ -481,11 +473,7 @@ void fanrun(unsigned long ms)
 	on(FANCTRL);
 	fanStatus = true;
 	fanTurnOnTime = millis();
-	
-	#ifdef DEBUG
-		printf("Running fan for %lums (or until override is off or power is disconnected).\r\n", ms);
-	#endif
-	
+	printf("Running fan for %lums (or until override is off or power is disconnected).\r\n", ms);
 	fanStatusTime = ms;
 }
 
@@ -498,14 +486,10 @@ void fancheck()
 		{
 			off(FANCTRL);
 			fanStatus = false;
-			#ifdef DEBUG
-				printf("Turning fan off. Delay was %lu ms.\r\n", fanStatusTime);
-			#endif
+			printf("Turning fan off. Delay was %lu ms.\r\n", fanStatusTime);
 			fanStatusTime = 0;
 
-			#ifdef DEBUG
-				if (!powerStatus) printf("System shutting down...\r\n");
-			#endif
+			if (!powerStatus) printf("System shutting down...\r\n");
 		}
 	}
 }
