@@ -382,6 +382,7 @@ ISR(INT0_vect)
 		_delay_ms(SWITCHDELAY);
 		off(SOURCESEL2);
 		_delay_ms(ONDELAY);
+		fanStatusTime = 0;	// Stop fan from running on battery power
 	}
 }
 
@@ -480,7 +481,7 @@ void fanrun(unsigned long ms)
 	fanTurnOnTime = millis();
 	
 	#ifdef DEBUG
-		printf("Running fan for %lums (or until override is off).\r\n", ms);
+		printf("Running fan for %lums (or until override is off or power is disconnected).\r\n", ms);
 	#endif
 	
 	fanStatusTime = ms;

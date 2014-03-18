@@ -12,7 +12,7 @@
 #define USVFIRMWARE_H_
 
 // -- Constants
-#define STATUSFREQ 5000
+#define STATUSFREQ 1000
 #define LEDFREQ 500
 
 #define VREF 3	// Reference voltage for ADC
@@ -30,10 +30,10 @@
 // Fan delays
 #ifdef DEBUG
 	#define FANEXTPOWERON 30000
-	#define FANMECHSWOFF 15000
+//	#define FANMECHSWOFF 15000
 #else
 	#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
-	#define FANMECHSWOFF 3*60000	// Run fan for 3 minutes when mech. switch turned off
+//	#define FANMECHSWOFF 3*60000	// Run fan for 3 minutes when mech. switch turned off
 #endif
 
 // -- Aliases
