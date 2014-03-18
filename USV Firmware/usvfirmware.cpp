@@ -357,6 +357,14 @@ int main(void)
 				}
 			}
 		}
+		
+		if (powerStatus && !chargeStatus && (bat1voltage < BATMAX-0.05 || bat1voltage < BATMAX-0.05))	// Workaround for charge timer (needs testing)
+		{
+			off(CHARGESEL);
+			_delay_ms(2000);
+			on(CHARGESEL);
+			printf("Cycling batteries to restart charge timer\r\n");
+		}
 
 		fancheck();
 
