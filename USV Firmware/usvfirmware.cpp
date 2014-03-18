@@ -340,7 +340,9 @@ int main(void)
 			bat1percent = (bat1voltage-BATSHUTOFF)/(BATMAX-BATSHUTOFF)*100;
 			bat2percent = (bat2voltage-BATSHUTOFF)/(BATMAX-BATSHUTOFF)*100;
 			if (bat1percent < 0) bat1percent = 0;
+			if (bat1percent > 100) bat1percent = 100;
 			if (bat2percent < 0) bat2percent = 0;
+			if (bat2percent > 100) bat2percent = 100;
 			printf("System status at %lu:%02lu:%02lu (since system start):\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", (now/1000/60/60), (now/1000/60) % 60, (now/1000) % 60, !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
 			printf("Battery 1: %.2fV (%u%% - Raw %u) - Battery 2: %.2fV (%u%% Raw: %u)\r\n", bat1voltage, bat1percent, bat1raw, bat2voltage, bat2percent, bat2raw);
 			if (fanStatus)
