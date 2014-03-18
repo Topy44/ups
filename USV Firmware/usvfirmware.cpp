@@ -115,25 +115,6 @@ int main(void)
 	sei();	// Enable interrupts. Use atomic blocks from here on
 
 	switchStatus = !get(MECHSW);	// Go sure to call switch routine once at start
-
-	if (get(OPTO))
-	{
-		// External Power turned on
-		powerStatusChanged = true;
-		powerStatusTime = millis();
-	}
-	else
-	{
-		// External Power turned off
-		powerStatusChanged = false;
-		powerStatusTime = 0;
-		powerStatus = false;
-		off(CHARGESEL);
-		_delay_ms(SWITCHDELAY);
-		off(SOURCESEL1);
-		_delay_ms(SWITCHDELAY);
-		off(SOURCESEL2);
-	}
 	
 	if (get(OPTO))
 	{
@@ -156,10 +137,6 @@ int main(void)
 			off(SOURCESEL2);
 		}
 	}
-	
-	buz(true);	// BEEP!
-	_delay_ms(200);
-	buz(false);
 	
 	adcTimer = millis();
 	statusTimer = millis();
