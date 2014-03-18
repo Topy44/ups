@@ -19,6 +19,7 @@
 #define VDIV1 (25.5+4.9)/4.9	// Battery 1 voltage divider
 #define VDIV2 (25.5+12.4)/12.4	// Battery 2 voltage divider
 
+#define BATMAX 8.15
 #define BATLOWV 7.0
 #define BATVLOWV 6.5
 #define BATSHUTOFF 6.3
@@ -30,10 +31,8 @@
 // Fan delays
 #ifdef DEBUG
 	#define FANEXTPOWERON 30000
-//	#define FANMECHSWOFF 15000
 #else
 	#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
-//	#define FANMECHSWOFF 3*60000	// Run fan for 3 minutes when mech. switch turned off
 #endif
 
 // -- Aliases

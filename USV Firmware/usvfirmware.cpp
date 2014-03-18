@@ -78,7 +78,7 @@ int main(void)
 		printf("Debug build!\r\n");
 	#endif
 	
-	printf("Configuration:\r\nBattery low warning threshold: %.2fV\r\nBattery very low warning threshold: %.2fV\r\nBattery discharged shut-off threshold: %.2fV\r\nRelay switching delay: %dms\r\nFan turn off delay: %dS\r\n", BATLOWV, BATVLOWV, BATSHUTOFF, SWITCHDELAY, FANEXTPOWERON);
+	printf("Configuration:\r\nBattery low warning threshold: %.2fV\r\nBattery very low warning threshold: %.2fV\r\nBattery discharged shut-off threshold: %.2fV\r\nRelay switching delay: %dms\r\nFan turn off delay: %dS\r\nReference voltage: %.2fV\r\nBattery 1 voltage divider ratio: %f\r\nBattery 2 voltage divider ratio: %f\r\n", BATLOWV, BATVLOWV, BATSHUTOFF, SWITCHDELAY, FANEXTPOWERON, (double)VREF, VDIV1, VDIV2);
 
 	in(OPTO);
 	in(MECHSW);
@@ -336,8 +336,13 @@ int main(void)
 			millis_t now;
 			now = millis();
 			statusTimer = now;
+			int bat1percent, bat2percent;
+			bat1percent = (bat1voltage-BATSHUTOFF)/(BATMAX-BATSHUTOFF)*100;
+			bat2percent = (bat2voltage-BATSHUTOFF)/(BATMAX-BATSHUTOFF)*100;
+			if (bat1percent < 0) bat1percent = 0;
+			if (bat2percent < 0) bat2percent = 0;
 			printf("System status at %lu:%02lu:%02lu (since system start):\r\nMechSw: %u - Fan: %u - Charging: %u (%u, %u) - ExtPower: %u - LED Status: %u:%u\r\n", (now/1000/60/60), (now/1000/60) % 60, (now/1000) % 60, !get(MECHSW), fanStatus, chargeStatus, !(bool)get(BAT1STAT), !(bool)get(BAT2STAT), powerStatus, ledStatusA, ledStatusB);
-			printf("Battery 1 Voltage: %.2fV (Raw %u) - Battery 2 Voltage: %.2fV (Raw: %u)\r\n", bat1voltage, bat1raw, bat2voltage, bat2raw);
+			printf("Battery 1: %.2fV (%u%% - Raw %u) - Battery 2: %.2fV (%u%% Raw: %u)\r\n", bat1voltage, bat1percent, bat1raw, bat2voltage, bat2percent, bat2raw);
 			if (fanStatus)
 			{
 				if (fanOverride)
