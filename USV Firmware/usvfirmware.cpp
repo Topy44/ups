@@ -73,7 +73,7 @@ int main(void)
 	serial_init();
 
 	printf("12V USV v0.2.0\r\n(c)2014 Thorin Hopkins\r\n");
-	printf("Build %s %s\r\n", __DATE__, __TIME__);
+	printf("Built %s %s\r\n", __DATE__, __TIME__);
 
 	#ifdef DEBUG
 		printf("Debug build!\r\n");
@@ -242,7 +242,7 @@ int main(void)
 			ledStatusB = GREEN;
 			alarm = false;
 		}
-		else if (powerStatus && !chargeStatus)
+		else if (powerStatus && chargeStatus)
 		{
 			// LEDs: Flash Red/Off			Off, charging
 			ledStatusA = FLASHRED;
@@ -254,6 +254,13 @@ int main(void)
 			// LEDs: Off/Flash Green			Off, ext. power, fan running
 			ledStatusA = OFF;
 			ledStatusB = FLASHGREEN;
+			alarm = false;
+		}
+		else if (powerStatus)
+		{
+			// LEDs: Off/Off				Off, ext. power, fan off
+			ledStatusA = OFF;
+			ledStatusB = OFF;
 			alarm = false;
 		}
 	
@@ -288,13 +295,10 @@ int main(void)
 		}
 		else
 		{
-			// LEDs: Off/Off				Undefined state
+			// LEDs: Off/Off				Undefined state or off
 			ledStatusA = OFF;
 			ledStatusB = OFF;
 			alarm = false;
-			#ifdef DEBUG
-				// printf("Undefined state (or off)\r\n");
-			#endif
 		}
 
 		if (millis() - batLowTimer >= 100)
@@ -332,7 +336,7 @@ int main(void)
 			}
 			
 			switchStatus = !get(MECHSW);
-			bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;		// What?
+			bat1voltage = ((double)adcread(BAT1V)/1024*VREF)*VDIV1;		// Update voltage to check if its high enough again
 			bat2voltage = ((double)adcread(BAT2V)/1024*VREF)*VDIV2;
 		}
 
