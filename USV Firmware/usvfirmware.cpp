@@ -66,7 +66,7 @@ volatile bool alarm = false;
 int main(void)
 {
 	out(BUZ);
-	wdt_enable(WDTO_8S);
+	wdt_enable(WDTO_8S);	// Enable watchdog, 8 seconds
 	wdt_reset();
 
 	_delay_ms(200);	// Wait a bit to escape reset loops
