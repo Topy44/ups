@@ -23,8 +23,9 @@
 
 #define BATMAX 8.15
 #define BATLOWV 7.0
-#define BATVLOWV 6.5
-#define BATSHUTOFF 6.3
+#define BATVLOWV 6.8
+#define BATSHUTOFF 6.4
+#define BATCYCLE 7.8
 
 // Switching delays
 #define ONDELAY 2000
@@ -32,9 +33,9 @@
 
 // Fan delays
 #ifdef DEBUG
-	#define FANEXTPOWERON 30000
+	#define FANEXTPOWERON 30000L	// Run for 30 seconds in debug builds
 #else
-	#define FANEXTPOWERON 180*60000	// Run fan for 3 hours when ext. power turned on
+	#define FANEXTPOWERON 180*60000L	// Run fan for 3 hours when ext. power turned on
 #endif
 
 // -- Aliases
