@@ -368,7 +368,7 @@ int main(void)
 			}
 		}
 		
-		if (powerStatus && !chargeStatus && (bat1voltage < BATMAX-0.05 || bat1voltage < BATMAX-0.05))	// Workaround for charge timer (needs testing)
+		if (powerStatus && !chargeStatus && (bat1voltage < BATCYCLE || bat1voltage < BATCYCLE))	// Workaround for charge timer (needs testing)
 		{
 			off(CHARGESEL);
 			_delay_ms(2000);
