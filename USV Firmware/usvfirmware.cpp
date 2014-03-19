@@ -162,12 +162,16 @@ int main(void)
 				// Mech. Switch turned on
 				on(OUTCTRL);	// Turn on output
 				printf("Mech.Sw. turned on.\r\n");
+				updateWait = true;
+				updateWaitTime = millis();
 			}
 			else
 			{
 				// Mech. Switch turned off
 				off(OUTCTRL);	// Turn off output
 				printf("Mech.Sw. turned off.\r\n");
+				updateWait = true;
+				updateWaitTime = millis();
 			}
 		}
 	
