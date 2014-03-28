@@ -23,9 +23,10 @@
 
 #define BATMAX 8.15
 #define BATLOWV 7.0
-#define BATVLOWV 6.8
-#define BATSHUTOFF 6.4
-#define BATCYCLE 7.8
+#define BATVLOWV 6.9
+#define BATSHUTOFF 6.8
+
+#define CHARGECYCLE 120*60000L	// Cycle batteries every X hours to reset charge timer
 
 // Switching delays
 #define ONDELAY 2000

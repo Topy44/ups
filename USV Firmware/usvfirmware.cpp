@@ -58,6 +58,7 @@ volatile millis_t adcTimer = 0;
 volatile millis_t statusTimer = 0;
 volatile millis_t ledTimer = 0;
 volatile millis_t batLowTimer = millis();
+volatile millis_t chargeTimer = 0;
 
 volatile int batLowCounter = 0;
 
@@ -74,7 +75,7 @@ int main(void)
 	millis_init();
 	serial_init();
 
-	printf("12V USV v0.3.0\r\n(c)2014 Thorin Hopkins\r\n");
+	printf("12V USV v0.3.2\r\n(c)2014 Thorin Hopkins\r\n");
 	printf("Built %s %s\r\n", __DATE__, __TIME__);
 
 	#ifdef DEBUG
@@ -372,13 +373,30 @@ int main(void)
 			}
 		}
 		
-		if (powerStatus && !chargeStatus && (bat1voltage < BATCYCLE || bat1voltage < BATCYCLE))	// Workaround for charge timer (needs testing)
+		static bool lastChargeStatus;
+		if (lastChargeStatus != chargeStatus)
 		{
-			off(CHARGESEL);
-			_delay_ms(2000);
-			on(CHARGESEL);
-			_delay_ms(500);		// Wait for voltage to stabilize
+			lastChargeStatus = chargeStatus;
+			if (chargeStatus)
+			{
+				printf("Starting charge cycle\r\n");
+				chargeTimer = millis();
+			}
+			else
+			{
+				printf("Stopping charge cycle\r\n");
+				chargeTimer = 0;
+			}
+		}
+		
+		if (chargeStatus && millis() - chargeTimer >= CHARGECYCLE)
+		{
+			chargeTimer = millis();
 			printf("Cycling batteries to restart charge timer\r\n");
+			off(CHARGESEL);
+			_delay_ms(4500);
+			on(CHARGESEL);
+			_delay_ms(500);
 		}
 
 		fancheck();
